@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -36,7 +37,9 @@ public class UserService implements UserDetailsService {
         if (userExists) {
             throw new RuntimeException("Пользователь с таким email уже существует");
         }
-        // TODO: зашифровать пароль
+
+        String encodedPassword = passwordEncoder.encode(user.getPassword());
+        user.setPassword(encodedPassword);
 
         user.setRole("ROLE_USER");
        return userRepository.save(user);
