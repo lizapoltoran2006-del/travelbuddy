@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Доступные поездки | TravelBuddy</title>
+
+    <link href="https://jsdelivr.net" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/trips">🚗 TravelBuddy</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link text-white" href="/logout">Выйти</a>
+        </div>
+    </div>
+</nav>
+
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 text-secondary fw-bold">Изучайте новые маршруты</h1>
+        <a href="/trips/create" class="btn btn-success">+ Создать поездку</a>
+    </div>
+
+
+    <div class="row">
+
+
+        <div class="col-md-4 mb-4" th:each="trip : ${tripsAttribute}">
+
+
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+
+                    <h5 class="card-title fw-bold text-primary">
+                        <span th:text="${trip.fromPlace}">Откуда</span> →
+                        <span th:text="${trip.toPlace}">Куда</span>
+                    </h5>
+
+
+                    <p class="card-text text-muted my-3" th:text="${trip.description}">Описание поездки отсутствует.</p>
+
+                    <hr>
+
+
+                    <div class="small text-secondary">
+
+                        <div class="mb-1">📅 Дата: <span th:text="${trip.departureDate}">01.01.2026</span></div>
+
+                        <div>👥 Свободно мест: <span class="badge bg-info text-dark" th:text="${trip.availableSeats}">0</span> из <span th:text="${trip.totalSeats}">0</span></div>
+                    </div>
+                </div>
+
+
+                <div class="card-footer bg-transparent border-top-0 pb-3">
+                    <a href="#" class="btn btn-outline-primary w-100 btn-sm fw-bold">Хочу поехать</a>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="col-12 text-center my-5" th:if="${#lists.isEmpty(tripsAttribute)}">
+            <p class="lead text-muted">Пока никто не создал ни одной поездки. Будьте первыми!</p>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
