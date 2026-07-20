@@ -45,4 +45,8 @@ public class UserService implements UserDetailsService {
        return userRepository.save(user);
 
     }
+    public com.travelbuddy.repository.UserRepository getUserRepository() {
+        return this.userRepository;
+    }
+
 }
