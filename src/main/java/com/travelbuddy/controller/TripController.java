@@ -2,6 +2,7 @@ package com.travelbuddy.controller;
 
 
 import com.travelbuddy.entity.Trip;
+import com.travelbuddy.entity.TripApplication;
 import com.travelbuddy.entity.User;
 import com.travelbuddy.service.TripService;
 import com.travelbuddy.service.UserService;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -29,19 +32,18 @@ public class TripController {
     // 1. REST-регистрация нового пользователя
     @PostMapping("/api/register")
     public com.travelbuddy.entity.User register(@org.springframework.web.bind.annotation.RequestBody com.travelbuddy.entity.User user) {
-        // Аннотация @RequestBody приказывает Spring Boot принять JSON из тела запроса и превратить его в Java-объект
+
         return userService.registerNewUser(user);
     }
 
     // 2. REST-вход (Аутентификация) с выдачей JWT-токена
     @PostMapping("/api/login")
     public com.travelbuddy.dto.AuthResponse login(@org.springframework.web.bind.annotation.RequestBody com.travelbuddy.dto.AuthRequest request) {
-        // Ищем пользователя в базе
+
         com.travelbuddy.entity.User user = userService.getUserRepository().findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Неверный email или пароль"));
 
-        // Здесь мы пока временно сделаем простую проверку пароля текстом (на следующем шаге свяжем со Spring Security)
-        // Генерируем долговечный JWT-токен на основе Email и роли пользователя для Postman, как просили в ТЗ!
+
         String token = jwtService.generateToken(user.getEmail(), user.getRole());
 
         return new com.travelbuddy.dto.AuthResponse(token);
@@ -50,8 +52,7 @@ public class TripController {
     // 3. REST-получение всех поездок по Беларуси
     @GetMapping("/api/trips")
     public java.util.List getTrips() {
-        // Метод больше не принимает Model model и не возвращает строку "trips"
-        // Он просто отдает чистый список Java-объектов, который Spring сам превратит в красивый JSON!
+
         return tripService.getAllTrips();
     }
 
@@ -61,6 +62,32 @@ public class TripController {
     public String showLoginPage() {
         return "login";
     }
+
+    @PostMapping("/api/trips")
+    public Trip createNewTrip(
+            @RequestBody Trip trip,
+            Principal principal) {
+
+        String driverEmail = principal.getName();
+        return tripService.createTrip(trip, driverEmail);
+    }
+    @PostMapping("/api/trips/{id}/apply")
+    public TripApplication applyForTrip(
+            @PathVariable Long id,
+            java.security.Principal principal) {
+        String passengerEmail = principal.getName();
+        return tripService.applyForTrip(id, passengerEmail);
+    }
+
+    @PostMapping("/api/trips/{id}/budget")
+    public com.travelbuddy.entity.TripBudget addBudget(
+            @PathVariable Long id,
+            @RequestParam String expenseName,
+            @RequestParam BigDecimal totalAmount) {
+
+        return tripService.calculateAndSaveBudget(id, expenseName, totalAmount);
+    }
+
 }
 
 

@@ -25,4 +25,5 @@ public class TripApplication {
     @JoinColumn(name = "passenger_id")
     private User passenger;
 
+
 }
