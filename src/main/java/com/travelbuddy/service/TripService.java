@@ -40,18 +40,31 @@ public class TripService {
 
     @Transactional
     public TripApplication applyForTrip(Long tripId, String passengerEmail) {
+        return applyForTrip(tripId, passengerEmail, 1);
+    }
+
+    @Transactional
+    public TripApplication applyForTrip(Long tripId, String passengerEmail, Integer seatsCount) {
+
+        if (seatsCount == null || seatsCount <= 0) {
+            throw new RuntimeException("Количество мест должно быть больше 0");
+        }
+
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new RuntimeException("Поездка не найдена"));
 
         User passenger = userRepository.findByEmail(passengerEmail)
                 .orElseThrow(() -> new RuntimeException("Пассажир не найден"));
 
-        if (trip.getAvailableSeats() <= 0) {
-            throw new RuntimeException("Извините, в этой поездке больше нет свободных мест");
+
+        if (trip.getAvailableSeats() < seatsCount) {
+            throw new RuntimeException("Недостаточно свободных мест. Доступно: " + trip.getAvailableSeats() + ", запрошено: " + seatsCount);
         }
 
-        trip.setAvailableSeats(trip.getAvailableSeats() - 1);
+
+        trip.setAvailableSeats(trip.getAvailableSeats() - seatsCount);
         tripRepository.save(trip);
+
         TripApplication application = new TripApplication();
         application.setTrip(trip);
         application.setPassenger(passenger);
@@ -60,6 +73,32 @@ public class TripService {
 
         return tripApplicationRepository.save(application);
     }
+
+    @Transactional
+    public void cancelApplication(Long applicationId, String userEmail) {
+
+        TripApplication application = tripApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Заявка не найдена"));
+
+
+        if (!application.getPassenger().getEmail().equals(userEmail)) {
+            throw new RuntimeException("Вы можете отменить только свою заявку");
+        }
+
+        if (!"ACCEPTED".equals(application.getStatus())) {
+            throw new RuntimeException("Эта заявка уже отменена");
+        }
+
+        Trip trip = application.getTrip();
+        Integer seatsToReturn = application.getSeatsCount() != null ? application.getSeatsCount() : 1;
+        trip.setAvailableSeats(trip.getAvailableSeats() + seatsToReturn);
+        tripRepository.save(trip);
+
+
+        application.setStatus("CANCELLED");
+        tripApplicationRepository.save(application);
+    }
+
 
     @Transactional
     public TripBudget calculateAndSaveBudget(Long tripId, String expenseName, BigDecimal totalAmount) {
@@ -78,7 +117,6 @@ public class TripService {
         budget.setTotalAmount(totalAmount);
         budget.setAmountPerPerson(amountPerPerson);
 
-        // 4. Сохраняем в PostgreSQL
         return tripBudgetRepository.save(budget);
     }
 

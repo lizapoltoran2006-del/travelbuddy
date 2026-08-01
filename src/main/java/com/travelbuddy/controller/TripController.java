@@ -3,6 +3,7 @@ package com.travelbuddy.controller;
 
 import com.travelbuddy.entity.Trip;
 import com.travelbuddy.entity.TripApplication;
+import com.travelbuddy.entity.TripBudget;
 import com.travelbuddy.entity.User;
 import com.travelbuddy.service.TripService;
 import com.travelbuddy.service.UserService;
@@ -29,14 +30,14 @@ public class TripController {
         return "trips";
     }
 
-    // 1. REST-регистрация нового пользователя
+
     @PostMapping("/api/register")
     public com.travelbuddy.entity.User register(@org.springframework.web.bind.annotation.RequestBody com.travelbuddy.entity.User user) {
 
         return userService.registerNewUser(user);
     }
 
-    // 2. REST-вход (Аутентификация) с выдачей JWT-токена
+
     @PostMapping("/api/login")
     public com.travelbuddy.dto.AuthResponse login(@org.springframework.web.bind.annotation.RequestBody com.travelbuddy.dto.AuthRequest request) {
 
@@ -49,7 +50,7 @@ public class TripController {
         return new com.travelbuddy.dto.AuthResponse(token);
     }
 
-    // 3. REST-получение всех поездок по Беларуси
+
     @GetMapping("/api/trips")
     public java.util.List getTrips() {
 
@@ -74,13 +75,24 @@ public class TripController {
     @PostMapping("/api/trips/{id}/apply")
     public TripApplication applyForTrip(
             @PathVariable Long id,
-            java.security.Principal principal) {
+            @RequestParam(required = false, defaultValue = "1") Integer seats,
+            Principal principal) {
         String passengerEmail = principal.getName();
-        return tripService.applyForTrip(id, passengerEmail);
+        return tripService.applyForTrip(id, passengerEmail, seats);
+    }
+
+
+    @DeleteMapping("/api/applications/{applicationId}")
+    public String cancelApplication(
+            @PathVariable Long applicationId,
+            Principal principal) {
+        String userEmail = principal.getName();
+        tripService.cancelApplication(applicationId, userEmail);
+        return "Бронирование успешно отменено";
     }
 
     @PostMapping("/api/trips/{id}/budget")
-    public com.travelbuddy.entity.TripBudget addBudget(
+    public TripBudget addBudget(
             @PathVariable Long id,
             @RequestParam String expenseName,
             @RequestParam BigDecimal totalAmount) {
