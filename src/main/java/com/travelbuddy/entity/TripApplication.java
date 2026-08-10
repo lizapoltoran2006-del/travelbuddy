@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "trip_applications")
 @Getter
@@ -15,7 +17,8 @@ public class TripApplication {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String status;
-    private java.time.LocalDateTime reactedAt; // когда попутчик нажал кнопку «Хочу поехать»
+    private LocalDateTime reactedAt;// когда попутчик нажал кнопку «Хочу поехать»
+    private Integer seatsCount;
 
     @ManyToOne
     @JoinColumn(name = "trip_id")
@@ -24,5 +27,6 @@ public class TripApplication {
     @ManyToOne
     @JoinColumn(name = "passenger_id")
     private User passenger;
+
 
 }
