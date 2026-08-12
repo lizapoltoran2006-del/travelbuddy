@@ -1,6 +1,5 @@
 package com.travelbuddy.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,6 +9,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthResponse {
-    private String token;
+public class ReviewRequestDto {
+    private Integer rating;
+    private String text;
+    private Long targetUserId;  // кому пишем отзыв
 }
