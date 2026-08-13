@@ -33,9 +33,9 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**"
                         ).permitAll()
-                        .requestMatchers("/login", "/register", "/trips").permitAll()
+                        .requestMatchers("/login", "/register", "/trips", "/api/trips").permitAll()
                         // комментарии и отзывы доступны только авторизованным
-                        .requestMatchers("/api/trips/**/comments/**").authenticated()
+                        .requestMatchers("/api/trips/*/comments/**").authenticated()
                         .requestMatchers("/api/reviews/**").authenticated()
                         .anyRequest().authenticated()
                 )
