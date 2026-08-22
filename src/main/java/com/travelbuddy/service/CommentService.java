@@ -9,6 +9,7 @@ import com.travelbuddy.repository.CommentRepository;
 import com.travelbuddy.repository.TripRepository;
 import com.travelbuddy.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,9 +24,16 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
+    private final ApplicationService applicationService;
 
     @Transactional
     public CommentResponseDto addComment(Long tripId, String authorEmail, CommentRequestDto requestDto) {
+
+        // --- НОВАЯ ПРОВЕРКА: ТОЛЬКО УЧАСТНИКИ ПОЕЗДКИ МОГУТ ПИСАТЬ ---
+        if (!applicationService.isUserParticipant(tripId, authorEmail)) {
+            throw new RuntimeException("Только участники поездки могут оставлять комментарии");
+        }
+
         // 1. Находим поездку
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new RuntimeException("Поездка не найдена"));
@@ -52,7 +60,12 @@ public class CommentService {
         tripRepository.findById(tripId)
                 .orElseThrow(() -> new RuntimeException("Поездка не найдена"));
 
-        List<Comment> comments = commentRepository.findByTripId(tripId);
+        // Создаем объект сортировки: по полю createdAt, убывание (DESC)
+        Sort sort = Sort.by(Sort.Direction.ASC, "createdAt");
+
+        // Получаем комментарии с сортировкой (указываем, что ищем по tripId)
+        List<Comment> comments = commentRepository.findByTripId(tripId, sort);
+
         return comments.stream()
                 .map(this::mapToResponseDto)
                 .collect(Collectors.toList());

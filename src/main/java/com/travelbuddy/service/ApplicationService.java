@@ -82,4 +82,28 @@ public class ApplicationService {
         application.setStatus("CANCELLED");
         tripApplicationRepository.save(application);
     }
+
+    //  Проверка, участвует ли пользователь в поездке
+    public boolean isUserParticipant(Long tripId, String userEmail) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new RuntimeException("Поездка не найдена"));
+
+        // Если пользователь — водитель
+        if (trip.getDriver().getEmail().equals(userEmail)) {
+            return true;
+        }
+
+        // Если пользователь — пассажир с активной заявкой
+        return tripApplicationRepository
+                .findByTripIdAndPassengerEmail(tripId, userEmail)
+                .map(app -> "ACCEPTED".equals(app.getStatus()) || "COMPLETED".equals(app.getStatus()))
+                .orElse(false);
+    }
+
+    //  Проверка, была ли завершенная поездка между пассажиром и водителем
+    public boolean hasCompletedTripWithDriver(Long passengerId, Long driverId) {
+        return tripApplicationRepository
+                .findByPassengerIdAndTripDriverIdAndStatus(passengerId, driverId, "COMPLETED")
+                .isPresent();
+    }
 }

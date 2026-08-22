@@ -19,7 +19,9 @@ public class Trip {
     private java.time.LocalDateTime departureDate; // дата и время выезда
     private Integer totalSeats; // всего мест в машине
     private Integer availableSeats; // сколько свободных мест осталось
-    private String description; // описание поездки, пожелания водителя
+    private String description;// описание поездки, пожелания водителя
+    private String paymentDetails; // реквизиты для оплаты
+
     @ManyToOne
     @JoinColumn(name = "driver_id")
     private User driver;

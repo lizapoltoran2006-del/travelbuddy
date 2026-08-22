@@ -19,6 +19,7 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
+    private final ApplicationService applicationService;
 
     @Transactional
     public ReviewResponseDto addReview(String authorEmail, ReviewRequestDto requestDto) {
@@ -33,6 +34,10 @@ public class ReviewService {
         // 3. Проверяем, что автор не пишет отзыв сам себе
         if (author.getId().equals(target.getId())) {
             throw new RuntimeException("Нельзя оставить отзыв самому себе");
+        }
+
+        if (!applicationService.hasCompletedTripWithDriver(author.getId(), target.getId())) {
+            throw new RuntimeException("Вы можете оставить отзыв только после завершённой поездки с этим пользователем");
         }
 
         // 4. Проверяем рейтинг
