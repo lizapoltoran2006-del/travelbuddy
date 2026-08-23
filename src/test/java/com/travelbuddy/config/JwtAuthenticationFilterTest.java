@@ -25,7 +25,6 @@ class JwtAuthenticationFilterTest {
 
     @Test
     void doFilterInternal_ShouldSetAuthentication_WhenValidToken() throws Exception {
-
         String token = "valid-token";
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Authorization", "Bearer " + token);
@@ -33,32 +32,29 @@ class JwtAuthenticationFilterTest {
 
         when(jwtService.extractEmail(anyString())).thenReturn("test@buddy.by");
         when(jwtService.isTokenValid(anyString(), anyString())).thenReturn(true);
-
+        when(jwtService.extractRole(anyString())).thenReturn("ROLE_USER");
 
         filter.doFilterInternal(request, response, (req, res) -> {});
-
 
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         assertEquals("test@buddy.by",
                 SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        assertEquals("ROLE_USER",
+                SecurityContextHolder.getContext().getAuthentication().getAuthorities().iterator().next().getAuthority());
     }
 
     @Test
     void doFilterInternal_ShouldNotSetAuthentication_WhenNoToken() throws Exception {
-
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-
         filter.doFilterInternal(request, response, (req, res) -> {});
-
 
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
     @Test
     void doFilterInternal_ShouldNotSetAuthentication_WhenInvalidToken() throws Exception {
-
         String token = "invalid-token";
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Authorization", "Bearer " + token);
@@ -67,9 +63,22 @@ class JwtAuthenticationFilterTest {
         when(jwtService.extractEmail(anyString())).thenReturn("test@buddy.by");
         when(jwtService.isTokenValid(anyString(), anyString())).thenReturn(false);
 
-
         filter.doFilterInternal(request, response, (req, res) -> {});
 
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void doFilterInternal_ShouldNotSetAuthentication_WhenTokenExpired() throws Exception {
+        String token = "expired-token";
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        when(jwtService.extractEmail(anyString())).thenReturn("test@buddy.by");
+        when(jwtService.isTokenValid(anyString(), anyString())).thenReturn(false);
+
+        filter.doFilterInternal(request, response, (req, res) -> {});
 
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }

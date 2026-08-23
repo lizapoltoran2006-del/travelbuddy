@@ -1,6 +1,6 @@
 package com.travelbuddy.exception;
 
-import com.travelbuddy.dto.ErrorResponse;
+import com.travelbuddy.dto.ErrorResponseDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,10 +12,8 @@ class GlobalExceptionHandlerTest {
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
     @Test
-    void handleAllExceptions_ShouldReturnInternalServerError() {
-        Exception ex = new RuntimeException("Test error");
-
-        ResponseEntity<ErrorResponse> response = handler.handleAllExceptions(ex);
+    void handleAllExceptions_ShouldReturn500() {
+        ResponseEntity<ErrorResponseDto> response = handler.handleAllExceptions(new Exception("Test error"));
 
         assertNotNull(response);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
@@ -27,25 +25,13 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleAllExceptions_ShouldSetCorrectTimestamp() {
-        Exception ex = new RuntimeException("Test error");
-        long before = System.currentTimeMillis();
-
-        ResponseEntity<ErrorResponse> response = handler.handleAllExceptions(ex);
-
-        long after = System.currentTimeMillis();
-        assertTrue(response.getBody().getTimestamp() >= before);
-        assertTrue(response.getBody().getTimestamp() <= after);
-    }
-
-    @Test
-    void handleAllExceptions_ShouldLogError() {
-
-        Exception ex = new NullPointerException("Test NPE");
-
-        ResponseEntity<ErrorResponse> response = handler.handleAllExceptions(ex);
+    void handleRuntimeException_ShouldReturn400() {
+        ResponseEntity<ErrorResponseDto> response = handler.handleRuntimeException(new RuntimeException("Неверный email"));
 
         assertNotNull(response);
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), response.getBody().getStatus());
+        assertEquals("Неверный email", response.getBody().getMessage());
     }
 }

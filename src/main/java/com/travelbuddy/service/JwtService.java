@@ -15,7 +15,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    // Секретный ключ для подписи токенов (минимум 256 бит для безопасности алгоритма HMAC)
+    // Секретный ключ для подписи токенов
     private final String SECRET_STRING = "superSecureAndVeryLongSecretKeyForTravelBuddyApplication2026";
     private final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET_STRING.getBytes(StandardCharsets.UTF_8));
 
@@ -39,6 +39,11 @@ public class JwtService {
     // Извлекает Email  из токена
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    // извлекает роль из токена
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
     // Проверяет, валиден ли токен

@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "trip_budgets")
 @Getter
@@ -21,5 +24,8 @@ public class TripBudget {
     @ManyToOne
     @JoinColumn(name = "trip_id")
     private Trip trip;
+
+    @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<BudgetPayment> payments = new ArrayList<>();
 
 }
