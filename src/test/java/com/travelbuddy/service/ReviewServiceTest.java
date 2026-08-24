@@ -29,6 +29,9 @@ class ReviewServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ApplicationService applicationService;
+
     @InjectMocks
     private ReviewService reviewService;
 
@@ -59,6 +62,7 @@ class ReviewServiceTest {
     void addReview_ShouldSave() {
         when(userRepository.findByEmail("a@buddy.by")).thenReturn(Optional.of(author));
         when(userRepository.findById(2L)).thenReturn(Optional.of(target));
+        when(applicationService.hasCompletedTripWithDriver(1L, 2L)).thenReturn(true);
         when(reviewRepository.save(any(Review.class))).thenReturn(review);
 
         ReviewRequestDto dto = new ReviewRequestDto(5, "Good", 2L);

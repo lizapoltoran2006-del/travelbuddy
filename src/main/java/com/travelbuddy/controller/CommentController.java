@@ -3,6 +3,7 @@ package com.travelbuddy.controller;
 import com.travelbuddy.dto.CommentRequestDto;
 import com.travelbuddy.dto.CommentResponseDto;
 import com.travelbuddy.service.CommentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,7 @@ public class CommentController {
     @PostMapping
     public CommentResponseDto addComment(
             @PathVariable Long tripId,
-            @RequestBody CommentRequestDto requestDto,
+            @Valid @RequestBody CommentRequestDto requestDto,
             Principal principal) {
         String userEmail = principal.getName();
         return commentService.addComment(tripId, userEmail, requestDto);

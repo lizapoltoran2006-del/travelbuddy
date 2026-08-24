@@ -5,6 +5,7 @@ import com.travelbuddy.dto.AuthResponseDto;
 import com.travelbuddy.dto.RegisterRequestDto;
 import com.travelbuddy.dto.UserResponseDto;
 import com.travelbuddy.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,17 +15,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+
 public class AuthController {
 
     private final AuthService authService;
 
     @PostMapping("/register")
-    public UserResponseDto register(@RequestBody RegisterRequestDto requestDto) {
+    public UserResponseDto register(@Valid @RequestBody RegisterRequestDto requestDto) {
         return authService.registerUser(requestDto);
     }
 
     @PostMapping("/login")
-    public AuthResponseDto login(@RequestBody AuthRequestDto requestDto) {
+    public AuthResponseDto login(@Valid @RequestBody AuthRequestDto requestDto) {
         return authService.authenticate(requestDto);
     }
 }

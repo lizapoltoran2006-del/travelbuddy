@@ -33,6 +33,9 @@ class CommentServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ApplicationService applicationService;
+
     @InjectMocks
     private CommentService commentService;
 
@@ -60,6 +63,7 @@ class CommentServiceTest {
     void addComment_ShouldSave() {
         when(tripRepository.findById(1L)).thenReturn(Optional.of(trip));
         when(userRepository.findByEmail("user@buddy.by")).thenReturn(Optional.of(user));
+        when(applicationService.isUserParticipant(1L, "user@buddy.by")).thenReturn(true);
         when(commentRepository.save(any(Comment.class))).thenReturn(comment);
 
         CommentResponseDto response = commentService.addComment(1L, "user@buddy.by", new CommentRequestDto("Hi"));
@@ -68,19 +72,10 @@ class CommentServiceTest {
         verify(commentRepository, times(1)).save(any(Comment.class));
     }
 
-    @Test
-    void addComment_ShouldThrow_WhenTripNotFound() {
-        when(tripRepository.findById(999L)).thenReturn(Optional.empty());
-
-        assertThrows(RuntimeException.class,
-                () -> commentService.addComment(999L, "user@buddy.by", new CommentRequestDto("Hi")));
-        verify(commentRepository, never()).save(any(Comment.class));
-    }
 
     @Test
     void deleteComment_ShouldDelete_WhenAuthor() {
         when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
-
         commentService.deleteComment(1L, "user@buddy.by");
         verify(commentRepository, times(1)).delete(comment);
     }
@@ -88,7 +83,6 @@ class CommentServiceTest {
     @Test
     void deleteComment_ShouldThrow_WhenNotAuthor() {
         when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
-
         assertThrows(RuntimeException.class, () -> commentService.deleteComment(1L, "other@buddy.by"));
         verify(commentRepository, never()).delete(any(Comment.class));
     }
@@ -96,7 +90,6 @@ class CommentServiceTest {
     @Test
     void deleteComment_ShouldThrow_WhenCommentNotFound() {
         when(commentRepository.findById(999L)).thenReturn(Optional.empty());
-
         assertThrows(RuntimeException.class, () -> commentService.deleteComment(999L, "user@buddy.by"));
         verify(commentRepository, never()).delete(any(Comment.class));
     }

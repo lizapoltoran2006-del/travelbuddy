@@ -118,4 +118,15 @@ public class BudgetService {
             return dto;
         }).collect(Collectors.toList());
     }
+    @Transactional
+    public TripBudget addBudget(Long tripId, String expenseName, BigDecimal totalAmount, String userEmail) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new RuntimeException("Поездка не найдена"));
+
+        if (!trip.getDriver().getEmail().equals(userEmail)) {
+            throw new RuntimeException("Только водитель может добавлять бюджет");
+        }
+
+        return calculateAndSaveBudget(tripId, expenseName, totalAmount);
+    }
 }

@@ -3,6 +3,7 @@ package com.travelbuddy.controller;
 import com.travelbuddy.dto.ReviewRequestDto;
 import com.travelbuddy.dto.ReviewResponseDto;
 import com.travelbuddy.service.ReviewService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @PostMapping
-    public ReviewResponseDto addReview(@RequestBody ReviewRequestDto requestDto, Principal principal) {
+    public ReviewResponseDto addReview(@Valid @RequestBody ReviewRequestDto requestDto, Principal principal) {
         String userEmail = principal.getName();
         return reviewService.addReview(userEmail, requestDto);
     }
