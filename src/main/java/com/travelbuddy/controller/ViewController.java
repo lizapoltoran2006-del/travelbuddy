@@ -36,11 +36,8 @@ public class ViewController {
         return "register"; // → register.html
     }
 
-    // Обработка регистрации через форму (не REST)
     @PostMapping("/register")
     public String processRegistration(@ModelAttribute("userAttribute") User user) {
-        // Здесь нужен отдельный метод в UserService для регистрации через форму
-        // return "redirect:/login";
         return "redirect:/login";
     }
 }

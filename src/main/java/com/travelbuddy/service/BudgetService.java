@@ -5,10 +5,7 @@ import com.travelbuddy.entity.BudgetPayment;
 import com.travelbuddy.entity.Trip;
 import com.travelbuddy.entity.TripBudget;
 import com.travelbuddy.entity.User;
-import com.travelbuddy.repository.BudgetPaymentRepository;
-import com.travelbuddy.repository.TripBudgetRepository;
-import com.travelbuddy.repository.TripRepository;
-import com.travelbuddy.repository.UserRepository;
+import com.travelbuddy.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,6 +26,7 @@ public class BudgetService {
     private final TripBudgetRepository tripBudgetRepository;
     private final BudgetPaymentRepository budgetPaymentRepository;
     private final UserRepository userRepository;
+    private final ApplicationService applicationService;
 
     @Transactional
     public TripBudget calculateAndSaveBudget(Long tripId, String expenseName, BigDecimal totalAmount) {
@@ -34,12 +34,11 @@ public class BudgetService {
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new RuntimeException("Поездка не найдена"));
 
-        // 2. Рассчитываем сумму на человека
-        // totalSeats — общее количество мест в машине (не свободных!)
-        BigDecimal totalSeats = BigDecimal.valueOf(trip.getTotalSeats());
 
-        // Делим общую сумму на количество мест, округляем до 2 знаков
-        BigDecimal amountPerPerson = totalAmount.divide(totalSeats, 2, RoundingMode.HALF_UP);
+        int participantsCount = applicationService.getActualParticipantsCount(tripId);
+        BigDecimal totalParticipants = BigDecimal.valueOf(participantsCount);
+
+        BigDecimal amountPerPerson = totalAmount.divide(totalParticipants, 2, RoundingMode.HALF_UP);
 
         // 3. Создаем объект бюджета
         TripBudget budget = new TripBudget();
@@ -50,7 +49,6 @@ public class BudgetService {
 
         TripBudget savedBudget = tripBudgetRepository.save(budget);
 
-        // Создаём платежи для всех участников поездки
         createPaymentsForBudget(savedBudget, trip);
 
         return savedBudget;
@@ -70,12 +68,9 @@ public class BudgetService {
         }
 }
 
-    public TripBudget getBudgetWithPayments(Long tripId) {
-        Trip trip = tripRepository.findById(tripId)
-                .orElseThrow(() -> new RuntimeException("Поездка не найдена"));
-
-        return tripBudgetRepository.findByTripId(tripId)
-                .orElseThrow(() -> new RuntimeException("Бюджет для этой поездки не найден"));
+    public TripBudget getBudgetById(Long budgetId) {
+        return tripBudgetRepository.findById(budgetId)
+                .orElseThrow(() -> new RuntimeException("Бюджет не найден"));
     }
 
     // Отметка оплаты
@@ -97,17 +92,22 @@ public class BudgetService {
         return budgetPaymentRepository.save(payment);
     }
 
-    // Получение статуса оплат для поездки
-    public List<BudgetPayment> getBudgetPayments(Long tripId) {
-        TripBudget budget = getBudgetWithPayments(tripId);
-        return budgetPaymentRepository.findByBudgetId(budget.getId());
-    }
+
 
     public List<BudgetPaymentDto> getBudgetPaymentsDto(Long tripId) {
-        TripBudget budget = getBudgetWithPayments(tripId);
-        List<BudgetPayment> payments = budgetPaymentRepository.findByBudgetId(budget.getId());
+        // 1. Получаем все бюджеты поездки
+        List<TripBudget> budgets = tripBudgetRepository.findByTripId(tripId);
 
-        return payments.stream().map(payment -> {
+        if (budgets.isEmpty()) {
+            return Collections.emptyList(); // Если бюджетов нет — возвращаем пустой список
+        }
+
+        List<BudgetPayment> allPayments = new ArrayList<>();
+        for (TripBudget budget : budgets) {
+            allPayments.addAll(budgetPaymentRepository.findByBudgetId(budget.getId()));
+        }
+
+        return allPayments.stream().map(payment -> {
             BudgetPaymentDto dto = new BudgetPaymentDto();
             dto.setId(payment.getId());
             dto.setUserId(payment.getUser().getId());
@@ -117,5 +117,25 @@ public class BudgetService {
             dto.setPaidAt(payment.getPaidAt());
             return dto;
         }).collect(Collectors.toList());
+    }
+    @Transactional
+    public TripBudget addBudget(Long tripId, String expenseName, BigDecimal totalAmount, String userEmail) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new RuntimeException("Поездка не найдена"));
+
+        if (!trip.getDriver().getEmail().equals(userEmail)) {
+            throw new RuntimeException("Только водитель может добавлять бюджет");
+        }
+
+        return calculateAndSaveBudget(tripId, expenseName, totalAmount);
+    }
+
+    public List<TripBudget> getBudgetsByTrip(Long tripId) {
+        // Проверяем, что поездка существует
+        tripRepository.findById(tripId)
+                .orElseThrow(() -> new RuntimeException("Поездка не найдена"));
+
+        // Возвращаем все бюджеты для этой поездки
+        return tripBudgetRepository.findByTripId(tripId);
     }
 }

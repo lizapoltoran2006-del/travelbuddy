@@ -1,11 +1,9 @@
 package com.travelbuddy.controller;
 
-import com.travelbuddy.entity.Trip;
-import com.travelbuddy.entity.User;
-import com.travelbuddy.repository.TripRepository;
-import com.travelbuddy.repository.UserRepository;
+import com.travelbuddy.dto.TripAdminDto;
+import com.travelbuddy.dto.UserAdminDto;
+import com.travelbuddy.service.AdminService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,34 +14,28 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminController {
 
-    private final UserRepository userRepository;
-    private final TripRepository tripRepository;
+    private final AdminService adminService;
 
     @GetMapping("/users")
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userRepository.findAll());
+    public ResponseEntity<List<UserAdminDto>> getAllUsers() {
+        return ResponseEntity.ok(adminService.getAllUsers());
     }
 
     @DeleteMapping("/users/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
-        if (!userRepository.existsById(id)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Пользователь не найден");
-        }
-        userRepository.deleteById(id);
+        adminService.deleteUser(id);
         return ResponseEntity.ok("Пользователь удалён");
     }
 
     @GetMapping("/trips")
-    public ResponseEntity<List<Trip>> getAllTrips() {
-        return ResponseEntity.ok(tripRepository.findAll());
+    public ResponseEntity<List<TripAdminDto>> getAllTrips() {
+        return ResponseEntity.ok(adminService.getAllTrips());
     }
 
     @DeleteMapping("/trips/{id}")
     public ResponseEntity<String> deleteTrip(@PathVariable Long id) {
-        if (!tripRepository.existsById(id)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Поездка не найдена");
-        }
-        tripRepository.deleteById(id);
+        adminService.deleteTrip(id);
         return ResponseEntity.ok("Поездка удалена");
     }
+
 }

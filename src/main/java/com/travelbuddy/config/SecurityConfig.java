@@ -31,11 +31,12 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/v3/api-docs/**",
+                                "/v3/api-docs.yaml",
                                 "/swagger-ui/**",
+                                "/swagger-ui.html",
                                 "/login",
                                 "/register",
-                                "/trips",
-                                "/api/trips"
+                                "/trips"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // комментарии и отзывы доступны только авторизованным

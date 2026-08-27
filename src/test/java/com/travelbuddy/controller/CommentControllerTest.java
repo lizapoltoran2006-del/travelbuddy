@@ -1,54 +1,56 @@
 package com.travelbuddy.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.travelbuddy.dto.AuthRequestDto;
 import com.travelbuddy.dto.CommentRequestDto;
-import com.travelbuddy.dto.CommentResponseDto;
-import com.travelbuddy.service.CommentService;
-import com.travelbuddy.service.JwtService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@WebMvcTest(CommentController.class)
-@Import(JwtService.class)  // ← Подключаем JwtService
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class CommentControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private TestRestTemplate restTemplate;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private String token;
 
-    @MockBean
-    private CommentService commentService;
+    @BeforeEach
+    void setUp() {
+        AuthRequestDto loginDto = new AuthRequestDto();
+        loginDto.setEmail("alice@buddy.by");
+        loginDto.setPassword("qwerty123");
+
+        ResponseEntity<String> loginResponse = restTemplate.postForEntity(
+                "/api/auth/login",
+                loginDto,
+                String.class
+        );
+
+        token = loginResponse.getBody().replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    }
 
     @Test
-    @WithMockUser  // ← ИМИТИРУЕМ АВТОРИЗОВАННОГО ПОЛЬЗОВАТЕЛЯ!
-    void addComment_ShouldReturnOk() throws Exception {
+    void addComment_ShouldReturnOk() {
         CommentRequestDto dto = new CommentRequestDto();
-        dto.setMessage("Отличная поездка!");
+        dto.setMessage("Интеграционный комментарий");
 
-        CommentResponseDto response = new CommentResponseDto();
-        response.setId(1L);
-        response.setMessage("Отличная поездка!");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
 
-        when(commentService.addComment(any(Long.class), any(String.class), any(CommentRequestDto.class)))
-                .thenReturn(response);
+        HttpEntity<CommentRequestDto> request = new HttpEntity<>(dto, headers);
 
-        mockMvc.perform(post("/api/trips/1/comments")
-                        .principal(() -> "user@buddy.by")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+        ResponseEntity<String> response = restTemplate.exchange(
+                "/api/trips/1/comments",
+                HttpMethod.POST,
+                request,
+                String.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 }

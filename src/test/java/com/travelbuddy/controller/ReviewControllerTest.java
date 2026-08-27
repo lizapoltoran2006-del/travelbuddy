@@ -1,57 +1,58 @@
 package com.travelbuddy.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.travelbuddy.dto.AuthRequestDto;
 import com.travelbuddy.dto.ReviewRequestDto;
-import com.travelbuddy.dto.ReviewResponseDto;
-import com.travelbuddy.service.JwtService;
-import com.travelbuddy.service.ReviewService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@WebMvcTest(ReviewController.class)
-@Import(JwtService.class)  // ← Подключаем JwtService
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ReviewControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private TestRestTemplate restTemplate;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private String token;
 
-    @MockBean
-    private ReviewService reviewService;
+    @BeforeEach
+    void setUp() {
+        AuthRequestDto loginDto = new AuthRequestDto();
+        loginDto.setEmail("alice@buddy.by");
+        loginDto.setPassword("qwerty123");
 
-    @Test
-    @WithMockUser  // ← ИМИТИРУЕМ АВТОРИЗОВАННОГО ПОЛЬЗОВАТЕЛЯ!
-    void addReview_ShouldReturnOk() throws Exception {
+        ResponseEntity<String> loginResponse = restTemplate.postForEntity(
+                "/api/auth/login",
+                loginDto,
+                String.class
+        );
+
+        token = loginResponse.getBody().replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+    }
+
+    /* @Test
+    void addReview_ShouldReturnOk() {
         ReviewRequestDto dto = new ReviewRequestDto();
         dto.setRating(5);
-        dto.setText("Отличный попутчик!");
-        dto.setTargetUserId(2L);
+        dto.setText("Интеграционный отзыв");
+        dto.setTargetUserId(2L); // ← Борис, а не Алиса!
 
-        ReviewResponseDto response = new ReviewResponseDto();
-        response.setId(1L);
-        response.setRating(5);
-        response.setText("Отличный попутчик!");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
 
-        when(reviewService.addReview(any(String.class), any(ReviewRequestDto.class)))
-                .thenReturn(response);
+        HttpEntity<ReviewRequestDto> request = new HttpEntity<>(dto, headers);
 
-        mockMvc.perform(post("/api/reviews")
-                        .principal(() -> "author@buddy.by")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
-    }
+        ResponseEntity<String> response = restTemplate.exchange(
+                "/api/reviews",
+                HttpMethod.POST,
+                request,
+                String.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }*/
 }

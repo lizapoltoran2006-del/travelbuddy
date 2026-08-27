@@ -5,9 +5,11 @@ import com.travelbuddy.entity.TripBudget;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface TripBudgetRepository extends JpaRepository<TripBudget, Long> {
-    Optional<TripBudget> findByTripId(Long tripId);
+
+    List<TripBudget> findByTripId(Long tripId);
 }

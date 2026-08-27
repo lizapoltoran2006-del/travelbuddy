@@ -6,11 +6,29 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import java.util.stream.Collectors;
 
 @ControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponseDto> handleValidationExceptions(MethodArgumentNotValidException ex) {
+
+        String errorMessage = ex.getBindingResult().getAllErrors().stream()
+                .map(error -> error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+
+        log.warn("Ошибка валидации: {}", errorMessage);
+
+        ErrorResponseDto error = new ErrorResponseDto(
+                errorMessage,
+                HttpStatus.BAD_REQUEST.value(),
+                System.currentTimeMillis()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleAllExceptions(Exception ex) {
         log.error("Фатальная ошибка в приложении: ", ex);

@@ -10,6 +10,7 @@ import com.travelbuddy.repository.TripApplicationRepository;
 import com.travelbuddy.service.ApplicationService;
 import com.travelbuddy.service.BudgetService;
 import com.travelbuddy.service.TripService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,6 @@ public class TripController {
     private final TripService tripService;
     private final ApplicationService applicationService;
     private final BudgetService budgetService;
-    private final TripApplicationRepository tripApplicationRepository;
 
 
     //  Поездки
@@ -37,39 +37,21 @@ public class TripController {
     }
 
     @PostMapping("/api/trips")
-    public Trip createNewTrip(@RequestBody TripRequestDto tripDto, Principal principal) {
-        String driverEmail = principal.getName();
-        Trip trip = new Trip();
-        trip.setFromPlace(tripDto.getFromPlace());
-        trip.setToPlace(tripDto.getToPlace());
-        trip.setDepartureDate(tripDto.getDepartureDate());
-        trip.setTotalSeats(tripDto.getTotalSeats());
-        trip.setDescription(tripDto.getDescription());
-        trip.setPaymentDetails(tripDto.getPaymentDetails());
-        return tripService.createTrip(trip, driverEmail);
-
+    public Trip createNewTrip(@Valid @RequestBody TripRequestDto tripDto, Principal principal) {
+        return tripService.createTripFromDto(tripDto, principal.getName());
     }
+
     @PostMapping("/api/trips/{id}/complete")
     public String completeTrip(@PathVariable Long id, Principal principal) {
-        Trip trip = tripService.findTripById(id);
-        if (!trip.getDriver().getEmail().equals(principal.getName())) {
-            throw new RuntimeException("Только водитель может завершить поездку");
-        }
-        List<TripApplication> applications = tripApplicationRepository.findByTripId(id);
-        for (TripApplication app : applications) {
-            app.setStatus("COMPLETED");
-            tripApplicationRepository.save(app);
-        }
+        tripService.completeTrip(id, principal.getName());
         return "Поездка завершена";
     }
 
+
     @GetMapping("/api/trips/{id}/payment")
     public ResponseEntity<String> getPaymentDetails(@PathVariable Long id, Principal principal) {
-        Trip trip = tripService.findTripById(id);
-        if (!applicationService.isUserParticipant(id, principal.getName())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Доступ запрещён: вы не участник этой поездки");
-        }
-        return ResponseEntity.ok(trip.getPaymentDetails());
+        String paymentDetails = tripService.getPaymentDetailsForParticipant(id, principal.getName());
+        return ResponseEntity.ok(paymentDetails);
     }
 
     // Заявки
@@ -79,14 +61,12 @@ public class TripController {
             @PathVariable Long id,
             @RequestParam(required = false, defaultValue = "1") Integer seats,
             Principal principal) {
-        String passengerEmail = principal.getName();
-        return applicationService.applyForTrip(id, passengerEmail, seats);
+        return applicationService.applyForTrip(id, principal.getName(), seats);
     }
 
     @DeleteMapping("/api/applications/{applicationId}")
     public String cancelApplication(@PathVariable Long applicationId, Principal principal) {
-        String userEmail = principal.getName();
-        applicationService.cancelApplication(applicationId, userEmail);
+        applicationService.cancelApplication(applicationId, principal.getName());
         return "Бронирование успешно отменено";
     }
 
@@ -98,11 +78,7 @@ public class TripController {
             @RequestParam String expenseName,
             @RequestParam BigDecimal totalAmount,
             Principal principal) {
-        Trip trip = tripService.findTripById(id);
-        if (!trip.getDriver().getEmail().equals(principal.getName())) {
-            throw new RuntimeException("Только водитель может добавлять бюджет");
-        }
-        return budgetService.calculateAndSaveBudget(id, expenseName, totalAmount);
+        return budgetService.addBudget(id, expenseName, totalAmount, principal.getName());
     }
 
     @GetMapping("/api/trips/{id}/details")
@@ -112,15 +88,13 @@ public class TripController {
 
     // Получение бюджета с платежами
     @GetMapping("/api/trips/{id}/budget")
-    public TripBudget getBudget(@PathVariable Long id) {
-        return budgetService.getBudgetWithPayments(id);
+    public List<TripBudget> getBudget(@PathVariable Long id) {
+        return budgetService.getBudgetsByTrip(id);
     }
-
     // Отметка оплаты
-    @PostMapping("/api/trips/{id}/budget/pay")
-    public String payBudget(@PathVariable Long id, Principal principal) {
-        TripBudget budget = budgetService.getBudgetWithPayments(id);
-        budgetService.markPayment(budget.getId(), principal.getName());
+    @PostMapping("/api/budgets/{budgetId}/pay")
+    public String payBudget(@PathVariable Long budgetId, Principal principal) {
+        budgetService.markPayment(budgetId, principal.getName());
         return "Платёж отмечен как оплаченный";
     }
 
