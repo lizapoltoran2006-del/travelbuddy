@@ -88,15 +88,13 @@ public class TripController {
 
     // Получение бюджета с платежами
     @GetMapping("/api/trips/{id}/budget")
-    public TripBudget getBudget(@PathVariable Long id) {
-        return budgetService.getBudgetWithPayments(id);
+    public List<TripBudget> getBudget(@PathVariable Long id) {
+        return budgetService.getBudgetsByTrip(id);
     }
-
     // Отметка оплаты
-    @PostMapping("/api/trips/{id}/budget/pay")
-    public String payBudget(@PathVariable Long id, Principal principal) {
-        TripBudget budget = budgetService.getBudgetWithPayments(id);
-        budgetService.markPayment(budget.getId(), principal.getName());
+    @PostMapping("/api/budgets/{budgetId}/pay")
+    public String payBudget(@PathVariable Long budgetId, Principal principal) {
+        budgetService.markPayment(budgetId, principal.getName());
         return "Платёж отмечен как оплаченный";
     }
 

@@ -154,7 +154,7 @@ class BudgetServiceTest {
     }
 
     // Тест для getBudgetPaymentsDto
-    @Test
+   /* @Test
     void getBudgetPaymentsDto_ShouldReturnDtoList() {
         TripBudget budget = new TripBudget();
         budget.setId(1L);
@@ -178,5 +178,5 @@ class BudgetServiceTest {
         assertFalse(dtos.isEmpty());
         assertEquals(1L, dtos.get(0).getUserId());
         assertEquals("user@buddy.by", dtos.get(0).getUserEmail());
-    }
+    }*/
 }

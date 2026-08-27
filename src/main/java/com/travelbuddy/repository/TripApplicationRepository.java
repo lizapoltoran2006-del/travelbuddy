@@ -21,4 +21,6 @@ public interface TripApplicationRepository extends JpaRepository<TripApplication
     // ПРОВЕРЯЕТ, БЫЛА ЛИ У ПОЛЬЗОВАТЕЛЯ ЗАВЕРШЕННАЯ ПОЕЗДКА С ВОДИТЕЛЕМ
     Optional<TripApplication> findByPassengerIdAndTripDriverIdAndStatus
     (Long passengerId, Long driverId, String status);
+
+    List<TripApplication> findByTripIdAndStatusIn(Long tripId, List<String> statuses);
 }

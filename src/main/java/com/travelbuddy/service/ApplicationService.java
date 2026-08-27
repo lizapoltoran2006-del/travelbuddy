@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -105,5 +106,19 @@ public class ApplicationService {
         return tripApplicationRepository
                 .findByPassengerIdAndTripDriverIdAndStatus(passengerId, driverId, "COMPLETED")
                 .isPresent();
+    }
+
+    public int getActualParticipantsCount(Long tripId) {
+        // 1. Находим поездку
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new RuntimeException("Поездка не найдена"));
+
+        // 2. Считаем пассажиров с подтверждёнными заявками (ACCEPTED или COMPLETED)
+        long passengersCount = tripApplicationRepository
+                .findByTripIdAndStatusIn(tripId, List.of("ACCEPTED", "COMPLETED"))
+                .size();
+
+        // 3. Возвращаем водителя (1) + количество пассажиров
+        return 1 + (int) passengersCount;
     }
 }
